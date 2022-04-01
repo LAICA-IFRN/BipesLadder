@@ -1,5 +1,4 @@
-import React, { useState, useCallback } from "react";
-import {evaluate} from 'mathjs';
+import React, { useState, useCallback, useEffect } from "react";
 
 import TrashDropZone from "./TrashDropZone";
 
@@ -16,7 +15,6 @@ import {
   getStorage,
   getLocalStorage,
   getAllLocalStorage,
-  parseJSON,
 } from "./helpers";
 
 import {
@@ -25,9 +23,9 @@ import {
   SIDEBAR_ITEM,
   COMPONENT,
   STANDARD_COMPONENT,
-  COLUMN,
 } from "./constants";
 import shortid from "shortid";
+import { nanoid } from "nanoid";
 
 import Fab from "@material-ui/core/Fab";
 import AddIcon from "@material-ui/icons/Add";
@@ -35,6 +33,8 @@ import SaveAltIcon from "@material-ui/icons/SaveAlt";
 import PlayCircleOutlineIcon from "@material-ui/icons/PlayCircleOutline";
 import ClearAllIcon from "@material-ui/icons/ClearAll";
 import IconButton from "@material-ui/core/IconButton";
+import { BrowserRouter as Router, Route, Link } from "react-router-dom";
+import Column, { parallelLines } from "./Column";
 import OpenInBrowserIcon from "@material-ui/icons/OpenInBrowser";
 
 import { makeStyles } from "@material-ui/core/styles";
@@ -46,10 +46,10 @@ import Divider from "@material-ui/core/Divider";
 import InboxIcon from "@material-ui/icons/Inbox";
 import DraftsIcon from "@material-ui/icons/Drafts";
 
-import { parallelLines } from "./Column";
-
 import { Button, Modal, Box, Typography } from "@material-ui/core";
 import TextField from "@material-ui/core/TextField";
+import { Code } from "@material-ui/icons";
+import { Component } from "react";
 
 const style_modal = {
   position: "absolute",
@@ -84,33 +84,109 @@ function Container() {
   const [openLoadModel, setOpenLoadModel] = React.useState(false);
   const handleOpenLoadModel = () => setOpenLoadModel(true);
   const handleCloseLoadModel = () => setOpenLoadModel(false);
-
   const initialLayout = initialData.layout;
   const initialComponents = initialData.components;
   const [layout, setLayout] = useState(initialLayout);
   const [components, setComponents] = useState(initialComponents);
+  const [timerParameters, setTimerParameters] = useState({});
+  const [counterParameters, setCounterParameters] = useState({});
   const [address, setAddress] = useState([]);
-  const [storedFilesNumber, setStoreFiledNumber] = useState(0);
   const [jsonExpression, setJsonExpression] = useState("{}");
   const classes = useStyles();
+  let finalExpression = {};
+  let layoutForSaveCopy = "";
+
+  let inputs_ = [];
+  let outputs_ = [];
+  const [inputs, setInputs] = useState([]);
+  const [outputs, setOutputs] = useState([]);
 
   const addressFromRow = (addresses) => {
     //addressArray.push(addresses[0]);
     setAddress(addresses);
-    console.log(address);
   };
+
+  const isClosed_contact = component => {
+    if (component.args.type == "closed_contact") {
+      if (component.args.address[0] == "n") {
+        component.args.address = component.args.address;
+        return
+      }
+
+      component.args.address = "not (" + component.args.address + ")";
+    }
+  }
+
+  const handleInputAndAddress = argumments => {
+    const [address_, component, components_copy, item] = argumments;
+
+    const handleAddress = (address, index) => {
+      if (address.args.path == item.path) {
+        delete address_[index];
+      }
+    }
+
+    const handleInput = (input, index) => {
+      const inputOk = input === component.properties.address;
+
+      if (!inputOk) {
+        return
+      };
+
+      inputs_.splice(index, 1);
+      address_.map(handleAddress);
+
+      delete components_copy[component.id];
+
+      console.log("Components_Copy", components_copy);
+    }
+
+    inputs_.forEach(handleInput);
+  }
+
+  const handleComponents = argumments => {
+    const [item, components_, componentsOk, components_copy, address_] = argumments
+
+    const handleComponent = component => {
+      if (componentsOk) {
+        return
+      };
+
+      const componentOk = component.id === item.id && component.type != "";
+      const argumments = [address_, component, components_copy, item];
+
+      if (!componentOk) {
+        return
+      };
+
+      handleInputAndAddress(argumments);
+    };
+
+    components_.forEach(handleComponent);
+  }
 
   const handleDropToTrashBin = useCallback(
     (dropZone, item) => {
-      console.log(item.path);
+      console.log("BippesLadder - Item", item, address);
+
+      let components_copy = components;
+      let address_ = address;
+
       const splitItemPath = item.path.split("-");
+      const components_ = Object.keys(components_copy);
+      const componentsOk = components_.includes(
+        "openedContactComponent",
+        "coilComponent",
+        "closedContactComponent",
+        "timerComponent",
+        "counterComponent"
+      );
+      const argumments = [item, components_, componentsOk, components_copy, address_];
+
       setLayout(handleRemoveItemFromLayout(layout, splitItemPath));
-      address.map((row, index) => {
-        console.log(row);
-        if (row.args.path == item.path) {
-          address.splice(index);
-        }
-      });
+      handleComponents(argumments);
+      setAddress(address_);
+      setComponents(components_copy);
     },
     [layout]
   );
@@ -118,38 +194,40 @@ function Container() {
   const handleDrop = useCallback(
     (dropZone, item) => {
       const splitDropZonePath = dropZone.path.split("-");
-
       const pathToDropZone = splitDropZonePath.slice(0, -1).join("-");
-      console.log(item);
 
-      const newItem = { id: shortid.generate(), type: item.type };
-      if (item.type === COLUMN) {
+      const newItem = { id: nanoid(), type: item.type };
+      if (item.type === COMPONENT) {
         newItem.children = item.children;
       }
 
       // sidebar into
       if (item.type === SIDEBAR_ITEM) {
+        console.log("Bippes Ladder - New Item Component", item);
         // 1. Move sidebar item into page
+        let newId = nanoid();
+        item.component.id = newId;
         const newComponent = {
-          id: shortid.generate(),
-          component: {
-            ...item.component,
-          },
+          id: newId,
+          ...item.component,
         };
-        console.log(newComponent);
+
+        console.log("Bippes Ladder - New Component", newComponent);
+
         const newItem = {
           id: newComponent.id,
           type: COMPONENT,
-          component: {
-            row: splitDropZonePath[2],
-            column: splitDropZonePath[1],
-            color: "Black",
-          },
+          row: splitDropZonePath[2],
+          column: splitDropZonePath[1],
         };
+
+        console.log("Bippes Ladder - New Item", newItem);
+
         setComponents({
           ...components,
           [newComponent.id]: newComponent,
         });
+
         setLayout(
           handleMoveSidebarComponentIntoParent(
             layout,
@@ -157,13 +235,13 @@ function Container() {
             newItem
           )
         );
+
         return;
       }
 
       // move down here since sidebar items dont have path
       const splitItemPath = item.path.split("-");
       const pathToItem = splitItemPath.slice(0, -1).join("-");
-      console.log(splitItemPath, pathToItem);
 
       // 2. Pure move (no create)
       if (splitItemPath.length === splitDropZonePath.length) {
@@ -216,9 +294,10 @@ function Container() {
 
   function checkParallelLines(row) {
     const linePairs = [];
+
     var initialLine = 0;
     var parallelLinesOrdered = [];
-    console.log(parallelLines);
+
     parallelLines[row].map((path, index) => {
       if (path != "") {
         const splitItemPath = path.split("-");
@@ -227,7 +306,6 @@ function Container() {
         parallelLinesOrdered.sort(function (a, b) {
           return a - b;
         });
-        console.log(parallelLinesOrdered);
       }
     });
 
@@ -256,8 +334,14 @@ function Container() {
   }
 
   function operation(op, firstComponent, secondComponent) {
-    if (firstComponent.row == -1) return secondComponent;
-    if (secondComponent.row == -1) return firstComponent;
+    if (firstComponent.row == -1) {
+      return secondComponent
+    };
+
+    if (secondComponent.row == -1) {
+      return firstComponent
+    };
+
     const row = firstComponent.row;
     const address =
       "(" +
@@ -284,6 +368,7 @@ function Container() {
         type: type,
       },
     };
+
     return newComponent;
   }
 
@@ -291,118 +376,214 @@ function Container() {
     var newAddress = new Array(2)
       .fill(STANDARD_COMPONENT)
       .map(() => new Array(13).fill(STANDARD_COMPONENT));
+
     console.info(newAddress);
+    
     let line = [];
-    address.map((component, index) => {
+
+    const pushComponentAddress = (component, row) => {
       if (component.args != "" && component.row == row) {
         const row = splitPath(component.args.path).row;
         const col = splitPath(component.args.path).column;
-        console.log(row, col);
+  
+        isClosed_contact(component)
+  
         newAddress[row][col] = component;
+  
+        if (component.args.type != "coil" && component.args.type != "timer")
+          inputs_.push(component.args.address);
       }
-    });
+    }
+
+    address.map(pushComponentAddress);
 
     return newAddress;
   }
 
+  var remove = function (array, value) {
+    var index = null;
+
+    while ((index = array.indexOf(value)) !== -1) array.splice(index, 1);
+
+    return array;
+  };
+
+  function checkInstructionParameters() {
+    console.log("BippesLadder - Address", address);
+    const components_ = address;
+
+    let instructions = {};
+    let instructionsCounter_ = [];
+    let instructionsTimer_ = [];
+
+    components_.forEach(component => {
+      let instructionsCounter = {};
+      let instructionsTimer = {};
+
+      if (component.args.type == "timer") {
+        instructionsTimer.address = component.args.address;
+        instructionsTimer.timerType = component.args.properties.timerType;
+        instructionsTimer.timerDuration = component.args.properties.timerDuration;
+        instructionsTimer_.push(instructionsTimer);
+
+        return
+      }
+
+      if (component.args.type == "counter") {
+        instructionsCounter.address = component.args.address;
+        instructionsCounter.counterType = component.args.properties.counterType;
+        instructionsCounter.preValue = component.args.properties.preValue;
+        instructionsCounter_.push(instructionsCounter);
+      }
+    })
+
+    instructions["counters"] = instructionsCounter_;
+    instructions["timers"] = instructionsTimer_;
+
+    return instructions;
+  }
+
   function getExpression(linePairs, row) {
     let addressOrdered = sortAddressByPath(address, row);
+    console.log(addressOrdered);
+
     let expression = STANDARD_COMPONENT;
     let componentsIntoLinePair = [];
 
     if (linePairs.length > 0) {
-      console.log("Parallel Lines", linePairs, row);
-      linePairs.map((pair, index) => {
+      linePairs.map(pair => {
         componentsIntoLinePair = [];
+
         for (let row = 0; row < 2; row++) {
           expression = STANDARD_COMPONENT;
+
           for (let col = pair[0]; col < pair[1]; col++) {
             if (
               addressOrdered[row][col].row == -1 ||
-              addressOrdered[row][col].args.type == "coil"
+              addressOrdered[row][col].args.type == "coil" ||
+              addressOrdered[row][col].args.type == "timer"
             )
               break;
-            console.log(row, col);
-            expression = operation(" and ", addressOrdered[row][col], expression);
+
+            expression = operation(
+              " and ",
+              addressOrdered[row][col],
+              expression
+            );
 
             addressOrdered[row][col] = STANDARD_COMPONENT;
+
             const newPath = expression.args.path;
+            
             addressOrdered[splitPath(newPath).row][splitPath(newPath).column] =
               expression;
           }
+
           componentsIntoLinePair.push(expression);
-          console.log(componentsIntoLinePair);
         }
 
         expression = STANDARD_COMPONENT;
-        componentsIntoLinePair.map((component, index) => {
+        componentsIntoLinePair.map(component => {
           expression = operation(" or ", component, expression);
-          console.log(expression);
         });
-        console.log(expression);
+
         const newPath = expression.args.path;
-        console.log(newPath, "teste");
+
         if (splitPath(newPath) != -1) {
           const row = splitPath(newPath).row;
           const col = splitPath(newPath).column;
 
           addressOrdered[row][col] = expression;
-          console.log(addressOrdered);
         }
       });
     }
+    
     let output = [];
+
     expression = STANDARD_COMPONENT;
     addressOrdered[0].map((component, index) => {
-      if (component.args.type != "coil") {
-        console.log(component, expression);
+      if (component.args.type != "coil" && component.args.type != "timer") {
+        console.log(component);
         expression = operation(" and ", component, expression);
       }
     });
-    for (let index = 0; index < addressOrdered.length; index++) {
+
+    addressOrdered.forEach((_, index) => {
       const lineAddressOrderedLength = addressOrdered[0].length;
+
       let comp = addressOrdered[index][lineAddressOrderedLength - 1];
+
       if (comp != undefined) {
         output.push(comp);
       }
-    }
+    })
+
+    //checkInstructionParameters(inputs_);
+    inputs_.forEach(input_ => {
+      // if (input_[0] == "T") {
+      //   inputs_ = remove(inputs_, input_);
+      // }
+    })
+
+    inputs_.forEach(input_ => {
+      //if (input_[0] == "T") {
+      //inputs_ = remove(inputs_, input_);
+      //}
+    })
+
+    finalExpression.inputs = inputs_;
+
+    setInputs(inputs_);
 
     return [expression.args.address, output];
   }
 
   const generateCode = useCallback(() => {
-    let finalExpression = [];
     let layoutForSave = layout;
-    
+
+    layoutForSaveCopy = layoutForSave;
+    finalExpression["row"] = [];
+    finalExpression["outputs"] = [];
 
     layout.map((row, rowIndex) => {
       let outs = [];
-      var linePairs = checkParallelLines(rowIndex);
-      
       let obj = {};
-      obj.row = rowIndex;
+
+      var linePairs = checkParallelLines(rowIndex);
       var [expression, outputs] = getExpression(linePairs, rowIndex);
+
+      obj.row = rowIndex;
       obj.expression = expression;
-      outputs.map((output, index) => {
+
+      outputs.map(output => {
         outs.push(output.args.address);
+
         let components = layoutForSave[rowIndex].children;
+
         components[components.length - 1].id = "coilComponent";
       });
+
       obj.outputs = outs;
 
-      finalExpression.push(obj);
+      outs.forEach(out => {
+        if (out[0] == "Q") {
+          finalExpression["outputs"].push(out)
+        };
+      });
+
+      finalExpression["row"].push(obj);
     });
+
+    const instructionParameters = checkInstructionParameters(address);
+
+    finalExpression["instructions_parameters"] = instructionParameters;
+    
     var json = createJSON(finalExpression);
+
     setJsonExpression(json);
-    let scope = {
-      A: 1,
-      B: 0, 
-      C: 1
-    }
-    console.log(String(parseJSON(json)[0].expression));
-    console.log(evaluate(String(parseJSON(json)[0].expression), scope));
-    setLayout(layoutForSave);
+    setLayout(layout);
     alert(json);
+    downloadFile(json);
   });
 
   const clearAllComponents = useCallback(() => {
@@ -411,7 +592,6 @@ function Container() {
   });
 
   const setLoadLayout = useCallback((loadLayout) => {
-    console.log(loadLayout);
     setLayout(loadLayout);
     handleCloseLoadModel();
   });
@@ -422,7 +602,7 @@ function Container() {
     handleCloseSaveModel();
   });
 
-  const loadStoredFile = (index) => {
+  const loadStoredFile = index => {
     //const jsonTest = '{"layout": [{"row": 0, "expression":"A", "outputs":["B"]},{"row": 1, "expression":"A", "outputs":["B"]}]}'
     const json = localStorage.key(index);
 
@@ -431,12 +611,7 @@ function Container() {
     const loadLayout = JSON.parse(json);
 
     setLoadLayout(loadLayout);
-    //jsonFinal.map((row, index) => {
-    //  console.log(row);
-    //  generateLineFromExpression(row);
-    //});
   };
-
   const addnewLine = useCallback(() => {
     var itens = [
       components.lineComponent,
@@ -451,13 +626,13 @@ function Container() {
       components.lineComponent,
       components.lineComponent,
       components.lineComponent,
-      components.openedContactComponent,
+      initialData.components.openedContactComponent,
     ];
 
     let newLayout = handleMoveSidebarComponentIntoParent(
       layout,
       [layout.length],
-      components.coilComponent
+      initialData.components.coilComponent
     );
     setLayout(newLayout);
 
@@ -472,21 +647,38 @@ function Container() {
     });
   });
 
-  //return <React.Fragment key={row.id}>{renderRow(row, 1)}</React.Fragment>;
+  useEffect(() => {
+    console.log("BippesLadder - components", components);
+  }, [components]);
 
-  // dont use index for key when mapping over items
-  // causes this issue - https://github.com/react-dnd/react-dnd/issues/342
+  useEffect(() => {
+    console.log("BippesLadder - address", address);
+  }, [address]);
+
+  function downloadFile(code) {
+    let element = document.createElement("a");
+    element.setAttribute(
+      "href",
+      "data:text/plain;charset=utf-8," + encodeURIComponent(code)
+    );
+    element.setAttribute("download", "code.json");
+    element.style.display = "none";
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  }
+
   return (
     <div className="body">
       <div class="head_top">
         <div style={{ textAlign: "right", float: "right" }}>
-          <img src="./images/if_logo.png" width="70"></img>
+          <img src="./images/logo_modified.png" width="150"></img>
         </div>
-        <h2>BIPES LADDER</h2>
+
         <div class="menu">
           <Fab variant="extended" aria-label="add" style={{ margin: "2px" }}>
             <IconButton color="primary" onClick={generateCode}>
-              <PlayCircleOutlineIcon /> EXECUTAR
+              <PlayCircleOutlineIcon /> DOWNLOAD CODE
             </IconButton>
           </Fab>
 
@@ -512,6 +704,10 @@ function Container() {
           {Object.values(SIDEBAR_ITEMS_OTHER).map((sideBarItem, index) => (
             <SideBarItem key={sideBarItem.id} data={sideBarItem} />
           ))}
+          <div style={{ marginTop: "50px", textAlign: "center" }}>
+            <img src="./images/if_logo.png" width="70"></img>
+            <img src="./images/logoLaica.png" width="70"></img>
+          </div>
         </div>
         <div className="pageContainer">
           <div className="page">
@@ -549,14 +745,14 @@ function Container() {
                 </React.Fragment>
               );
             })}
-            <TrashDropZone
+            
+          </div>
+          <TrashDropZone
               data={{
                 layout,
               }}
               onDrop={handleDropToTrashBin}
             />
-          </div>
-
           <div className="pageTest"></div>
         </div>
       </div>
@@ -614,4 +810,5 @@ function Container() {
     </div>
   );
 }
+
 export default Container;
