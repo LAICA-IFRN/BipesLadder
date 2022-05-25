@@ -64,32 +64,46 @@ const Component = ({ data, components, path, addressFromComponent }) => {
   const component = components[data.id];
   const ref = useRef(null);
   const [open, setOpen] = React.useState(false);
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
   const [address, setAddress] = React.useState(component.properties.address);
-
+  
+  const componentContent = components[data.id].content
+  const timerComponent = componentContent === "timer"
+  const counterComponent = componentContent === "counter"
+  
   const [{ isDragging }, drag] = useDrag({
     item: { type: COMPONENT, id: data.id, path },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
   });
-
+  
   const opacity = isDragging ? 0 : 1;
+
   drag(ref);
+
+  const handleOpen = () => setOpen(true);
+
+  const handleClose = () => setOpen(false);
 
   const changeProperty = () => {
     let value = document.getElementById("changeAddress").value;
 
     setAddress(value);
     component.properties.address = value;
-    console.log("Change Property - ", component );
-    if (components[data.id].content == "timer") {
+
+    console.log("Change Property - ", component);
+
+
+    if (timerComponent) {
       component.properties.timerType = timerType;
       component.properties.timerDuration = timerDuration;
       component.properties.baseTime = baseTime;
       component.svg.text = svgText;
-    } else if (components[data.id].content == "counter") {
+
+      return
+    }
+
+    if (counterComponent) {
       component.properties.counterType = counterType;
       component.properties.preValue = preValue;
       component.svg.text = svgText;
@@ -118,7 +132,7 @@ const Component = ({ data, components, path, addressFromComponent }) => {
 
   useEffect(() => {
     if (component.id !== "lineComponent" && address !== "") {
-      if (components[data.id].content == "timer") {
+      if (timerComponent) {
         addressFromComponent({
           id: data.id,
           address: address,
@@ -129,27 +143,31 @@ const Component = ({ data, components, path, addressFromComponent }) => {
             timerDuration: component.properties.timerDuration,
           },
         });
-      } else {
-        if (components[data.id].content == "counter") {
-          addressFromComponent({
-            id: data.id,
-            address: address,
-            path: path,
-            type: component.content,
-            properties: {
-              counterType: component.properties.counterType,
-              setPoint: component.properties.preValue,
-            },
-          });
-        } else {
-          addressFromComponent({
-            id: data.id,
-            address: address,
-            path: path,
-            type: component.content,
-          });
-        }
+
+        return
       }
+
+      if (counterComponent) {
+        addressFromComponent({
+          id: data.id,
+          address: address,
+          path: path,
+          type: component.content,
+          properties: {
+            counterType: component.properties.counterType,
+            setPoint: component.properties.preValue,
+          },
+        });
+
+        return
+      }
+
+      addressFromComponent({
+        id: data.id,
+        address: address,
+        path: path,
+        type: component.content,
+      });
     }
   }, [address]);
 
@@ -159,7 +177,9 @@ const Component = ({ data, components, path, addressFromComponent }) => {
   const [timerDuration, setTimerDuration] = React.useState(
     component.properties.timerDuration
   );
-  const [baseTime, setBaseTime] = React.useState(component.properties.baseTime);
+  const [baseTime, setBaseTime] = React.useState(
+    component.properties.baseTime
+  );
   const [redentiveTimer, setRedentiveTimer] = React.useState(
     component.properties.redentiveTimer
   );
@@ -170,33 +190,33 @@ const Component = ({ data, components, path, addressFromComponent }) => {
   const [svgText, setSvgText] = React.useState(component.svg.text);
   const [svgIcon, setSvgIcon] = React.useState(component.svg.icon);
 
-  const onAddressChange = (e) => {
+  const onAddressChange = e => {
     //setAddress(e.target.value);
   };
 
   //Hooks do Timer
-  const onTimerTypeChange = (e) => {
+  const onTimerTypeChange = e => {
     setTimerType(e.target.value);
 
     setSvgText(e.target.value);
   };
-  const onTimerDurantionChange = (e) => {
+  const onTimerDurantionChange = e => {
     setTimerDuration(e.target.value);
   };
-  const onBaseTimeChange = (e) => {
+  const onBaseTimeChange = e => {
     setBaseTime(e.target.value);
   };
-  const onRedentiveTimerChange = (e) => {
+  const onRedentiveTimerChange = e => {
     setRedentiveTimer(e.target.value);
   };
 
   //Hooks do contador
-  const onCounterTypeChange = (e) => {
+  const onCounterTypeChange = e => {
     setCounterType(e.target.value);
 
     setSvgText(e.target.value);
   };
-  const onPreValueChange = (e) => {
+  const onPreValueChange = e => {
     setpreValue(e.target.value);
   };
 
@@ -361,4 +381,5 @@ const Component = ({ data, components, path, addressFromComponent }) => {
     </div>
   );
 };
+
 export default Component;

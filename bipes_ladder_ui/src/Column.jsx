@@ -4,9 +4,45 @@ import { COLUMN } from "./constants";
 import DropZone from "./DropZone";
 import Component from "./Component";
 
+const style_vertical_div = {
+  backgroundColor: "#dee0de",
+  width: "3px",
+  position: "absolute",
+  height: "110px",
+  marginTop: "68px",
+  marginLeft: "-3px",
+};
+
+const checkIfwasSelected = (path, row) => parallelLines[row].includes(path);
+
+const changeLineColor = (color, path) => document
+  .getElementById("parallel_line-" + path)
+  .style.backgroundColor = color
+
+const showLine = (path, rowPath) => {
+  const row = rowPath.split("-")[0];
+  const wasSelected = checkIfwasSelected(path, row)
+
+  if (wasSelected) {
+    changeLineColor('#dee0de', path)
+    parallelLines[row]
+      .splice(parallelLines[row]
+      .indexOf(path));
+
+      return
+  }
+
+  changeLineColor('Black', path)
+  parallelLines[row].push(path);
+};
+
 const style = {};
+const parallelLines = new Array(5)
+  .fill("")
+  .map(() => new Array(15).fill(""));
+
 let rowPath;
-const parallelLines = new Array(5).fill("").map(() => new Array(13).fill(""));
+
 const Column = ({
   data,
   components,
@@ -44,32 +80,6 @@ const Column = ({
     );
   };
 
-  const style_vertical_div = {
-    backgroundColor: "#dee0de",
-    width: "3px",
-    position: "absolute",
-    height: "110px",
-    marginTop: "68px",
-    marginLeft: "-3px",
-  };
-
-  function showLine(path, rowPath) {
-    const row = rowPath.split("-")[0];
-    if (checkIfwasSelected(path, row)) {
-      document.getElementById("parallel_line-" + path).style.backgroundColor =
-        "#dee0de";
-      parallelLines[row].splice(parallelLines[row].indexOf(path));
-    } else {
-      document.getElementById("parallel_line-" + path).style.backgroundColor =
-        "Black";
-      parallelLines[row].push(path);
-    }
-  }
-
-  function checkIfwasSelected(path, row) {
-    return parallelLines[row].includes(path);
-  }
-
   return (
     <div
       ref={ref}
@@ -103,6 +113,7 @@ const Column = ({
         onDrop={handleDrop}
         isLast
       />
+
       <div
         id={"parallel_line-" + path}
         style={style_vertical_div}
@@ -111,5 +122,6 @@ const Column = ({
     </div>
   );
 };
+
 export default Column;
 export { parallelLines };
