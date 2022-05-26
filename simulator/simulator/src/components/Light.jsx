@@ -6,7 +6,6 @@ import { addHexColor } from "../utils/functions";
 const Light = (props) => {
   const [state, setState] = useState(props.color);
   const [on, setOn] = useState(false);
-  console.log(props.state);
   useEffect(() => {
     onChange();
   }, [props]);

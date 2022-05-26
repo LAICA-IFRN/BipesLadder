@@ -26,7 +26,7 @@ function convertInputsToStartInputs(inputs){
       const inp = inputs[index];
       inps.push({ address: inp, state: false });
     }
-    console.log(inps);
+    
 
     return inps;
   }
@@ -42,9 +42,9 @@ const InputBoard = (props) => {
   const [code, setCode] = useState(parseJSON(props.code));
   const initialState = { data: convertInputsToStartInputs(parseJSON(props.code).inputs) };
   const [state, dispatch] = useReducer(reducer, initialState);
-  console.log(props);
+  
 
-  console.log(code);
+  
 
   let onlyInputs = [];
   code.inputs.map((input, index) => {
@@ -56,14 +56,14 @@ const InputBoard = (props) => {
     addNewInput = true;
 
     if (input.address != undefined) {
-      console.log("Não é indefinido");
+      
       if (inp.length < 1) {
-        console.log("Inicial");
+      
         inp.push(input);
         return;
       }
       inp.map((i, index) => {
-        console.log(i);
+      
         if (i.address == input.address) {
           i.state = input.state;
           addNewInput = false;
@@ -72,7 +72,7 @@ const InputBoard = (props) => {
       });
 
       if (addNewInput) {
-        console.log("Adiciona uma nova linha no inp");
+      
         inp.push(input);
       }
     }
@@ -99,7 +99,7 @@ const InputBoard = (props) => {
   useEffect(() => {
     
     addInternalRely();
-    console.log(state);
+    
     props.changeInputs(state);
   }, [state]);
 

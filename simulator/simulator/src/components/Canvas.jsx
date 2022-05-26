@@ -58,7 +58,6 @@ function convertInputsToStartInputs(inputs) {
       const inp = inputs[index];
       inps.push({ address: inp, state: false });
     }
-    console.log(inps);
 
     return inps;
   }
@@ -71,7 +70,6 @@ const Canvas = (props) => {
 
   const initialState = { data: { address: "I0", state: false } };
   //const initialState = { data: convertInputsToStartInputs(parseJSON(props.code).inputs) };
-  console.log(props);
   const [input, dispatch] = useReducer(reducer, initialState);
 
   const [openLoadCode, setOpenLoadCode] = React.useState(false);
@@ -90,13 +88,11 @@ const Canvas = (props) => {
     const fileReader = new FileReader();
     fileReader.readAsText(e.target.files[0], "UTF-8");
     fileReader.onload = (e) => {
-      console.log(e.target.result);
       setProgram(e.target.result);
     };
   };
 
   const handleUploadFile = (e) => {
-    console.log("entrou");
     props.startBasicSimulator();
     handleCloseLoadCode();
   };
@@ -105,8 +101,6 @@ const Canvas = (props) => {
     setOutputs(outputs);
   };
   const changeInputs = (inp) => {
-    console.log(inp);
-
     dispatch({ type: "CHANGE_STATE", data: inp });
   };
 
@@ -124,7 +118,7 @@ const Canvas = (props) => {
   }
 
   React.useEffect(() => {
-    console.log(program);
+    
     if (!isEmpty(program))
       dispatch({
         type: "CHANGE_STATE",
@@ -137,7 +131,7 @@ const Canvas = (props) => {
   let onlyInputs = [];
   let onlyOutputs = [];
   if (!isEmpty(program)) {
-    console.log(program);
+    
     parseJSON(program).inputs.map((input, index) => {
       if (input[0] == "I") onlyInputs.push(input);
     });

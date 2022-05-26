@@ -16,7 +16,7 @@ const Display = (props) => {
     if (typeof inputs == "object") {
       inputs_ = inputs.data;
     }
-    console.log(inputs_);
+
     for (let index = 0; index < inputs_.length; index++) {
       const input = inputs_[index];
       if (input.state) {
@@ -34,22 +34,19 @@ const Display = (props) => {
     let outs = Object.keys(outputs);
     for (let index = 0; index < outs.length; index++) {
       const out = outs[index];
-      console.log(out);
-      if(outputs_[out]){
+
+      if (outputs_[out]) {
         initialOutputs[index] = "#000";
-      }else{
+      } else {
         initialOutputs[index] = "transparent";
       }
-      
     }
     setOutputs(initialOutputs);
-    
   }
 
   React.useEffect(() => {
-    console.log(props.getInputsValues);
     convertInputs(props.getInputsValues);
-    console.log(props.getOutputValues);
+
     convertOutputs(props.getOutputValues);
   }, [props]);
 

@@ -11,7 +11,7 @@ const OutputBoard = (props) => {
   let initialOutputs = Array(10).fill("transparent");
   const [outputs, setOutputs] = React.useState(initialOutputs);
   const [code, setCode] = React.useState(parseJSON(props.code));
-  console.log(code);
+  
 
   let onlyOutputs = [];
   code.outputs.map((output, index) => {
@@ -45,7 +45,7 @@ const OutputBoard = (props) => {
   }
 
   React.useEffect(() => {
-    console.log(props);
+    
     convertOutputs(props.outputs)
   }, [props.outputs]);
 
