@@ -1,11 +1,11 @@
 import React from "react";
 
 const style_vertical_div = {
-  backgroundColor: "#dee0de",
+  
+  backgroundColor: "#b8b9b8",
   width: "3px",
-  position: "absolute",
   height: "110px",
-  marginTop: "68px",
+  marginTop: "-48px",
   marginLeft: "-3px",
 };
 

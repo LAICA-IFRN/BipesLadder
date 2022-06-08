@@ -3,7 +3,7 @@ import { useDrag } from "react-dnd";
 import { COLUMN } from "./constants";
 import DropZone from "./DropZone";
 import Component from "./Component";
-import ParallelLines from "./ParallelLines"
+import ParallelLines from "./ParallelLines";
 
 const style = {};
 
@@ -54,7 +54,6 @@ const Column = ({
     >
       {data.children.map((component, index) => {
         const currentPath = `${path}-${index}`;
-
         return (
           <React.Fragment key={component.id}>
             <DropZone
@@ -67,10 +66,12 @@ const Column = ({
             />
 
             {renderComponent(component, currentPath)}
+                      
           </React.Fragment>
+          
         );
       })}
-      
+
       <DropZone
         data={{
           path: `${path}-${data.children.length}`,
@@ -79,11 +80,6 @@ const Column = ({
         }}
         onDrop={handleDrop}
         isLast
-      />
-
-      <ParallelLines
-        path={path}
-        rowPath={rowPath}
       />
 
     </div>

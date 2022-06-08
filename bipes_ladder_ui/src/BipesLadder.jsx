@@ -34,7 +34,8 @@ import PlayCircleOutlineIcon from "@material-ui/icons/PlayCircleOutline";
 import ClearAllIcon from "@material-ui/icons/ClearAll";
 import IconButton from "@material-ui/core/IconButton";
 import { BrowserRouter as Router, Route, Link } from "react-router-dom";
-import Column, { parallelLines } from "./Column";
+import Column from "./Column";
+import { parallelLines } from "./ParallelLines"
 import OpenInBrowserIcon from "@material-ui/icons/OpenInBrowser";
 
 import { makeStyles } from "@material-ui/core/styles";
