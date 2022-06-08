@@ -263,6 +263,8 @@ function Container() {
     var initialLine = 0;
     var parallelLinesOrdered = [];
 
+    console.log(parallelLines);
+
     parallelLines[row].map((path, index) => {
       if (path != "") {
         const splitItemPath = path.split("-");
@@ -280,6 +282,7 @@ function Container() {
         initialLine = pathOrdererd;
       }
     });
+    
 
     return linePairs;
   }

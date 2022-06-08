@@ -11,7 +11,7 @@ const style_vertical_div = {
 
 const parallelLines = new Array(5)
   .fill("")
-  .map(() => new Array(15).fill(""));
+  .map(() => new Array(1).fill("0-0-0"));
 
 const ParallelLines = ({path, rowPath}) => {
   const checkIfwasSelected = (path, row) => parallelLines[row].includes(path);

@@ -68,8 +68,6 @@ const Component = ({ data, components, path, addressFromComponent }) => {
   const [address, setAddress] = React.useState(component.properties.address);
 
   const componentContent = components[data.id].content;
-  console.log("Path >>>>>>>", path.split('-'));
-
   const [line, row, col] = path.split('-');
   let drawParallelLine = <ParallelLines path={path} rowPath={path} />;
   if(col == 0){
